@@ -117,29 +117,10 @@ class ProcessLock(object):
     def __enter__(self):
         dnf.util.ensure_dir(os.path.dirname(self.target))
         self._lock_thread()
-        inform = True
-        prev_pid = 0
         while not self._try_lock():
-            pid = self._try_read_lock()
-            if pid == -1:
-                # already removed by other process
-                continue
-            if pid == os.getpid():
-                # already locked by this process
-                return
-            if not os.access('/proc/%d/stat' % pid, os.F_OK):
-                # locked by a dead process
-                self._try_unlink()
-                continue
-            if not self.blocking:
-                self._unlock_thread()
-                msg = '%s already locked by %d' % (self.description, pid)
-                raise ProcessLockError(msg, pid)
-            if inform or prev_pid != pid:
-                msg = _('Waiting for process with pid %d to finish.') % (pid)
-                logger.info(msg)
-                inform = False
-                prev_pid = pid
+            msg = _('Waiting for process with pid to finish.')
+            logger.info(msg)
+            inform = False
             time.sleep(2)
 
     def __exit__(self, *exc_args):
