@@ -118,6 +118,14 @@ class ProcessLock(object):
         dnf.util.ensure_dir(os.path.dirname(self.target))
         self._lock_thread()
         while not self._try_lock():
+            pid = self._try_read_lock()
+            if pid == -1:
+                # already removed by other process
+                continue
+            if pid == os.getpid():
+                # already locked by this process
+                return
+            
             msg = _('Waiting for process with pid to finish.')
             logger.info(msg)
             inform = False
